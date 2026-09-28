@@ -42,6 +42,8 @@ inside its paragraph box**. The font size already used in the PSD is treated as
 the maximum, and the script reduces it only when the CSV value is too wide. Set a
 minimum font size to prevent unreadably small output. Shorter values return to the
 template size on their own row instead of inheriting a prior row's smaller size.
+The checkbox and minimum size apply immediately; **Run batch** and **Save mapping**
+also commit the currently visible controls, so there is no separate apply step.
 
 Auto-fit supports straight, horizontal, unrotated regular paragraph text only.
 Rotated, skewed, warped, vertical, and Photoshop Dynamic Text layers are not

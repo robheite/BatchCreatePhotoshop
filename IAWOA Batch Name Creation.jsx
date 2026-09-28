@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.0";
+var IAWOA_VERSION = "2.2.1";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -310,6 +310,20 @@ function createDefaultTextFitRules(textLayers) {
     return rules;
 }
 
+function updateTextFitRule(rule, paragraph, enabled, minimumText) {
+    if (!paragraph) {
+        return "Auto-fit requires a regular paragraph text layer with a bounding box.";
+    }
+    var parsedMinimum = parseFloat(minimumText);
+    if (isNaN(parsedMinimum) || parsedMinimum <= 0 || parsedMinimum > rule.maximumSize) {
+        return "Enter a minimum font size greater than 0 and no larger than the template size (" +
+            formatDecimal(rule.maximumSize) + " pt).";
+    }
+    rule.enabled = enabled;
+    rule.minimumSize = parsedMinimum;
+    return "";
+}
+
 function createAutomaticVisibilityRules(allLayers, headers) {
     var rules = [];
     var i;
@@ -399,6 +413,10 @@ function showMappingDialog(doc, csvFile, parsed, inventory, textMappings, textFi
     };
 
     saveButton.onClick = function () {
+        if (textTab._commitFitEditor && !textTab._commitFitEditor(true)) {
+            tabs.selection = textTab;
+            return;
+        }
         var file = File.saveDialog("Save this IAWOA mapping", "IAWOA mapping files:*.mapping.json");
         if (!file) {
             return;
@@ -413,6 +431,10 @@ function showMappingDialog(doc, csvFile, parsed, inventory, textMappings, textFi
     };
 
     runButton.onClick = function () {
+        if (textTab._commitFitEditor && !textTab._commitFitEditor(true)) {
+            tabs.selection = textTab;
+            return;
+        }
         if (!exportControls.outputFolder.text) {
             alert("Choose an output folder on the Export tab.");
             tabs.selection = exportTab;
@@ -496,7 +518,7 @@ function buildTextMappingTab(tab, parsed, inventory, textMappings, textFitRules)
     var minimumSize = fitEditor.add("edittext", undefined, "6");
     minimumSize.characters = 5;
     fitEditor.add("statictext", undefined, "pt");
-    var applyFit = fitEditor.add("button", undefined, "Apply fit setting");
+    fitEditor.add("statictext", undefined, "Changes apply immediately.");
     tab.add("statictext", undefined,
         "Auto-fit is for straight horizontal paragraph text; Dynamic Text, rotated, skewed, warped, or vertical text is unsupported.",
         { multiline: true });
@@ -510,7 +532,6 @@ function buildTextMappingTab(tab, parsed, inventory, textMappings, textFitRules)
             autoFit.enabled = paragraph;
             minimumSize.text = formatDecimal(rule.minimumSize);
             minimumSize.enabled = paragraph;
-            applyFit.enabled = paragraph;
         }
     };
     dropdown.onChange = function () {
@@ -520,26 +541,29 @@ function buildTextMappingTab(tab, parsed, inventory, textMappings, textFitRules)
         }
     };
 
-    applyFit.onClick = function () {
+    function commitFitEditor(showError) {
         if (!list.selection) {
-            return;
+            return true;
         }
         var index = list.selection.index;
-        if (!isParagraphTextLayer(inventory.textLayers[index].layer)) {
-            alert("Auto-fit requires a regular paragraph text layer with a bounding box.");
-            return;
+        var message = updateTextFitRule(
+            textFitRules[index],
+            isParagraphTextLayer(inventory.textLayers[index].layer),
+            autoFit.value,
+            minimumSize.text
+        );
+        if (message) {
+            if (showError) {
+                alert(message);
+            }
+            return false;
         }
-        var parsedMinimum = parseFloat(minimumSize.text);
-        if (isNaN(parsedMinimum) || parsedMinimum <= 0 ||
-                parsedMinimum > textFitRules[index].maximumSize) {
-            alert("Enter a minimum font size greater than 0 and no larger than the template size (" +
-                formatDecimal(textFitRules[index].maximumSize) + " pt).");
-            return;
-        }
-        textFitRules[index].enabled = autoFit.value;
-        textFitRules[index].minimumSize = parsedMinimum;
         refreshTextMappingList(list, parsed, inventory, textMappings, textFitRules, index);
-    };
+        return true;
+    }
+    tab._commitFitEditor = commitFitEditor;
+    autoFit.onClick = function () { commitFitEditor(true); };
+    minimumSize.onChange = function () { commitFitEditor(true); };
     if (list.items.length > 0) {
         list.selection = 0;
         list.onChange();

@@ -114,6 +114,12 @@ assert.strictEqual(context.calculateFittedFontSize(100, 20, 500, 400, 0.98), 100
 assert.strictEqual(context.calculateFittedFontSize(100, 20, 500, 1000, 0.98), 49);
 assert.strictEqual(context.calculateFittedFontSize(100, 60, 500, 1000, 0.98), 60);
 
+const immediateFitRule = { enabled: false, minimumSize: 6, maximumSize: 212 };
+assert.strictEqual(context.updateTextFitRule(immediateFitRule, true, true, "6"), "");
+assert.deepStrictEqual(immediateFitRule, { enabled: true, minimumSize: 6, maximumSize: 212 });
+assert.match(context.updateTextFitRule(immediateFitRule, true, true, "0"), /greater than 0/);
+assert.match(context.updateTextFitRule(immediateFitRule, false, true, "6"), /paragraph text layer/);
+
 assert.strictEqual(
   context.makeBaseName("{Name}_{row}", ["Name"], ["DURHAM / TEST"], 1),
   "DURHAM _ TEST_002"
