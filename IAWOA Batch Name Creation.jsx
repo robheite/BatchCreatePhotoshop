@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.1";
+var IAWOA_VERSION = "2.2.2";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -1035,11 +1035,36 @@ function isParagraphTextLayer(layer) {
 }
 
 function textLayerFontSize(layer) {
+    var fallbackSize;
     try {
-        return layer.textItem.size.as("pt");
+        fallbackSize = layer.textItem.size.as("pt");
     } catch (ignored) {
-        return Number(layer.textItem.size);
+        fallbackSize = Number(layer.textItem.size);
     }
+
+    var impliedSize = 0;
+    try {
+        var layerReference = new ActionReference();
+        layerReference.putIdentifier(stringIDToTypeID("layer"), layer.id);
+        var layerDescriptor = executeActionGet(layerReference);
+        var textDescriptor = layerDescriptor.getObjectValue(stringIDToTypeID("textKey"));
+        var styleRanges = textDescriptor.getList(stringIDToTypeID("textStyleRange"));
+        if (styleRanges.count > 0) {
+            var styleRange = styleRanges.getObjectValue(0);
+            var textStyle = styleRange.getObjectValue(stringIDToTypeID("textStyle"));
+            var impliedKey = stringIDToTypeID("impliedFontSize");
+            if (textStyle.hasKey(impliedKey)) {
+                impliedSize = textStyle.getUnitDoubleValue(impliedKey);
+            }
+        }
+    } catch (ignored2) {
+        impliedSize = 0;
+    }
+    return resolveEffectiveFontSize(impliedSize, fallbackSize);
+}
+
+function resolveEffectiveFontSize(impliedSize, fallbackSize) {
+    return isFinite(impliedSize) && impliedSize > 0 ? impliedSize : fallbackSize;
 }
 
 function formatDecimal(value) {

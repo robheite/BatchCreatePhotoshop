@@ -44,6 +44,8 @@ minimum font size to prevent unreadably small output. Shorter values return to t
 template size on their own row instead of inheriting a prior row's smaller size.
 The checkbox and minimum size apply immediately; **Run batch** and **Save mapping**
 also commit the currently visible controls, so there is no separate apply step.
+For scaled text layers, the script uses Photoshop's effective displayed font size
+as the template maximum so short values do not overflow the box vertically.
 
 Auto-fit supports straight, horizontal, unrotated regular paragraph text only.
 Rotated, skewed, warped, vertical, and Photoshop Dynamic Text layers are not

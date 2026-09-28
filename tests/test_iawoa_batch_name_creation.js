@@ -113,6 +113,11 @@ assert.notStrictEqual(context.equalityValue("A-B"), context.equalityValue("AB"))
 assert.strictEqual(context.calculateFittedFontSize(100, 20, 500, 400, 0.98), 100);
 assert.strictEqual(context.calculateFittedFontSize(100, 20, 500, 1000, 0.98), 49);
 assert.strictEqual(context.calculateFittedFontSize(100, 60, 500, 1000, 0.98), 60);
+assert.strictEqual(context.resolveEffectiveFontSize(163, 212), 163);
+assert.strictEqual(context.resolveEffectiveFontSize(0, 212), 212);
+assert.strictEqual(context.resolveEffectiveFontSize(NaN, 212), 212);
+assert.strictEqual(context.calculateFittedFontSize(163, 6, 3492, 2863, 0.98), 163);
+assert.strictEqual(context.calculateFittedFontSize(163, 6, 3492, 5171, 0.98), 107.8);
 
 const immediateFitRule = { enabled: false, minimumSize: 6, maximumSize: 212 };
 assert.strictEqual(context.updateTextFitRule(immediateFitRule, true, true, "6"), "");
