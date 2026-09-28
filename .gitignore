@@ -1,0 +1,18 @@
+# Local settings, backups, and Photoshop working files
+backups/
+tests/tmp/
+*.psd
+*.psb
+
+# Generated batch exports
+*.png
+*.jpg
+*.jpeg
+*.pdf
+
+# Saved mappings are template-specific and may contain customer layer names
+*.mapping.json
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db

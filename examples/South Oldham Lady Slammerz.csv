@@ -1,0 +1,14 @@
+Record Type,Team Name,Last Name,Jersey Number,Shirt Size,Inmate Number,Charge,Coach Title,Coach Name,Shirt Color,Player Front,Player Back,Coach Front,Coach Back,Export Name
+Player,Lady Slammerz,SHULL,11,Adult Small,100311,Disturbing the peace,,,Orange,yes,yes,no,no,SHULL_11
+Player,Lady Slammerz,NUTTLE,17,Youth XL,100317,Aggravated high pitch assault,,,Orange,yes,yes,no,no,NUTTLE_17
+Player,Lady Slammerz,WATSON,14,Adult Small,100314,Caught in the act,,,Orange,yes,yes,no,no,WATSON_14
+Player,Lady Slammerz,BIRCHLER,2,Youth Large,100302,Multiple counts of doing too much,,,Orange,yes,yes,no,no,BIRCHLER_2
+Player,Lady Slammerz,DURHAM,OO,Youth Medium,100300,Wanted: ON THE RUN,,,Orange,yes,yes,no,no,DURHAM_OO
+Player,Lady Slammerz,HAFLING,43,Youth Large,100343,Felony Fastball,,,Orange,yes,yes,no,no,HAFLING_43
+Player,Lady Slammerz,PARTIN,20,Youth Large,100320,Thought she could make it,,,Orange,yes,yes,no,no,PARTIN_20
+Player,Lady Slammerz,FOHR,1,Youth Medium,100301,Leaving a croc in the dugout,,,Orange,yes,yes,no,no,FOHR_1
+Player,Lady Slammerz,COOK,25,Youth Medium,100325,Bunt & Run - Fleeing the scene,,,Orange,yes,yes,no,no,COOK_25
+Player,Lady Slammerz,THOMAS,99,Youth Large,100399,Resisting the tag,,,Orange,yes,yes,no,no,THOMAS_99
+Coach,Lady Slammerz,,,Adult Large,,,Warden,Officer Claire,Black,no,no,yes,no,CLAIRE_COACH
+Coach,Lady Slammerz,,,Adult Small,,,Correctional,Officer Monie,Black,no,no,yes,no,MONIE_COACH
+Coach,Lady Slammerz,,,Adult XL,,,Sheriff,Officer Brandon,Black,no,no,yes,no,BRANDON_COACH
