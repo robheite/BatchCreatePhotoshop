@@ -133,6 +133,9 @@ assert.strictEqual(context.updateTextFitRule(immediateFitRule, true, true, "6"),
 assert.deepStrictEqual(immediateFitRule, { enabled: true, minimumSize: 6, maximumSize: 212 });
 assert.match(context.updateTextFitRule(immediateFitRule, true, true, "0"), /greater than 0/);
 assert.match(context.updateTextFitRule(immediateFitRule, false, true, "6"), /paragraph text layer/);
+immediateFitRule.enabled = true;
+assert.strictEqual(context.updateTextFitRule(immediateFitRule, false, false, "6"), "");
+assert.strictEqual(immediateFitRule.enabled, false);
 
 assert.strictEqual(
   context.makeBaseName("{Name}_{row}", ["Name"], ["DURHAM / TEST"], 1),

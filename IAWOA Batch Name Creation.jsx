@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.4";
+var IAWOA_VERSION = "2.2.5";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -312,7 +312,9 @@ function createDefaultTextFitRules(textLayers) {
 
 function updateTextFitRule(rule, paragraph, enabled, minimumText) {
     if (!paragraph) {
-        return "Auto-fit requires a regular paragraph text layer with a bounding box.";
+        rule.enabled = false;
+        return enabled ?
+            "Auto-fit requires a regular paragraph text layer with a bounding box." : "";
     }
     var parsedMinimum = parseFloat(minimumText);
     if (isNaN(parsedMinimum) || parsedMinimum <= 0 || parsedMinimum > rule.maximumSize) {

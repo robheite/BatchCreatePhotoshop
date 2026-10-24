@@ -48,7 +48,8 @@ For scaled text layers, the script uses Photoshop's effective displayed font siz
 as the template maximum so short values do not overflow the box vertically.
 Photoshop Dynamic Text layers are detected separately. Their CSV contents are
 updated normally, but manual auto-fit is disabled because Photoshop controls
-their fitting and does not expose the regular paragraph box operations.
+their fitting and does not expose the regular paragraph box operations. Disabled
+auto-fit controls do not block running or saving a mapping.
 
 Manual auto-fit supports straight, horizontal, unrotated regular paragraph text
 only. Rotated, skewed, warped, and vertical text are not supported by this JSX
