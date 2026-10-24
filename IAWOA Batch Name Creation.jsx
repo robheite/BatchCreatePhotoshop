@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.2";
+var IAWOA_VERSION = "2.2.4";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -520,7 +520,7 @@ function buildTextMappingTab(tab, parsed, inventory, textMappings, textFitRules)
     fitEditor.add("statictext", undefined, "pt");
     fitEditor.add("statictext", undefined, "Changes apply immediately.");
     tab.add("statictext", undefined,
-        "Auto-fit is for straight horizontal paragraph text; Dynamic Text, rotated, skewed, warped, or vertical text is unsupported.",
+        "Manual auto-fit is for straight horizontal paragraph text. Dynamic Text is mapped normally and fitted by Photoshop; rotated, skewed, warped, or vertical text is unsupported.",
         { multiline: true });
 
     list.onChange = function () {
@@ -956,12 +956,13 @@ function fitTextLayerToParagraphBox(layer, rule) {
     var maximumSize = rule.maximumSize;
     var minimumSize = rule.minimumSize;
     var textItem = layer.textItem;
+    var doc = layer.parent.typename === "Document" ? layer.parent : app.activeDocument;
+    activateLayerForTextChange(doc, layer);
     textItem.size = UnitValue(maximumSize, "pt");
     if (!trim(textItem.contents)) {
         return;
     }
 
-    var doc = layer.parent.typename === "Document" ? layer.parent : app.activeDocument;
     var previousActiveLayer = doc.activeLayer;
     var measurementLayer = layer.duplicate();
     var boxWidth = 0;
@@ -970,18 +971,23 @@ function fitTextLayerToParagraphBox(layer, rule) {
         measurementLayer.name = "IAWOA Auto-fit Measurement";
         try { measurementLayer.allLocked = false; } catch (ignored1) {}
         measurementLayer.visible = true;
+        activateLayerForTextChange(doc, measurementLayer);
 
         // Measure the transformed paragraph box in document pixels. A long run
         // of tiny glyphs fills the box closely without relying on TextItem.width,
         // whose units do not include document resolution or layer transforms.
         measurementLayer.textItem.size = UnitValue(1, "pt");
         measurementLayer.textItem.contents = repeatString("M ", 2048);
-        doc.activeLayer = measurementLayer;
         app.refresh();
         boxWidth = layerBoundsWidth(measurementLayer);
 
+        // Photoshop 27.11 can clear the internal text-layer selection during
+        // refresh. Re-select immediately before each setter that relies on it.
+        activateLayerForTextChange(doc, measurementLayer);
         measurementLayer.textItem.contents = textItem.contents;
+        activateLayerForTextChange(doc, measurementLayer);
         measurementLayer.textItem.kind = TextType.POINTTEXT;
+        activateLayerForTextChange(doc, measurementLayer);
         measurementLayer.textItem.size = UnitValue(maximumSize, "pt");
         app.refresh();
         measuredWidth = layerBoundsWidth(measurementLayer);
@@ -1002,7 +1008,13 @@ function fitTextLayerToParagraphBox(layer, rule) {
         throw new Error("Text '" + textItem.contents + "' will not fit layer '" + layer.name +
             "' at the minimum size of " + formatDecimal(minimumSize) + " pt.");
     }
+    activateLayerForTextChange(doc, layer);
     textItem.size = UnitValue(fittedSize, "pt");
+}
+
+function activateLayerForTextChange(doc, layer) {
+    app.activeDocument = doc;
+    doc.activeLayer = layer;
 }
 
 function layerBoundsWidth(layer) {
@@ -1028,9 +1040,54 @@ function calculateFittedFontSize(maximumSize, minimumSize, boxWidth, measuredWid
 function isParagraphTextLayer(layer) {
     try {
         return layer.typename === "ArtLayer" && layer.kind === LayerKind.TEXT &&
-            layer.textItem.kind === TextType.PARAGRAPHTEXT;
+            supportsManualTextFit(
+                layer.textItem.kind === TextType.PARAGRAPHTEXT,
+                isDynamicTextLayer(layer)
+            );
     } catch (ignored) {
         return false;
+    }
+}
+
+function supportsManualTextFit(paragraph, dynamicText) {
+    return paragraph && !dynamicText;
+}
+
+function isDynamicTextLayer(layer) {
+    try {
+        var textDescriptor = textDescriptorForLayer(layer);
+        var dynamicKey = stringIDToTypeID("textDynamicMagicPath");
+        if (textDescriptor.hasKey(dynamicKey)) {
+            return textDescriptor.getBoolean(dynamicKey);
+        }
+    } catch (ignored) {}
+
+    // Dynamic Text currently reports itself as paragraph text through the
+    // legacy DOM, but rejects paragraph width/height access and conversion.
+    try {
+        layer.textItem.width.as("pt");
+        layer.textItem.height.as("pt");
+        return false;
+    } catch (ignored2) {
+        return true;
+    }
+}
+
+function textDescriptorForLayer(layer) {
+    var doc = app.activeDocument;
+    var previousActiveLayer = doc.activeLayer;
+    try {
+        activateLayerForTextChange(doc, layer);
+        var layerReference = new ActionReference();
+        layerReference.putEnumerated(
+            stringIDToTypeID("layer"),
+            stringIDToTypeID("ordinal"),
+            stringIDToTypeID("targetEnum")
+        );
+        var layerDescriptor = executeActionGet(layerReference);
+        return layerDescriptor.getObjectValue(stringIDToTypeID("textKey"));
+    } finally {
+        try { doc.activeLayer = previousActiveLayer; } catch (ignored) {}
     }
 }
 
@@ -1044,10 +1101,7 @@ function textLayerFontSize(layer) {
 
     var impliedSize = 0;
     try {
-        var layerReference = new ActionReference();
-        layerReference.putIdentifier(stringIDToTypeID("layer"), layer.id);
-        var layerDescriptor = executeActionGet(layerReference);
-        var textDescriptor = layerDescriptor.getObjectValue(stringIDToTypeID("textKey"));
+        var textDescriptor = textDescriptorForLayer(layer);
         var styleRanges = textDescriptor.getList(stringIDToTypeID("textStyleRange"));
         if (styleRanges.count > 0) {
             var styleRange = styleRanges.getObjectValue(0);

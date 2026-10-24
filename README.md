@@ -46,11 +46,15 @@ The checkbox and minimum size apply immediately; **Run batch** and **Save mappin
 also commit the currently visible controls, so there is no separate apply step.
 For scaled text layers, the script uses Photoshop's effective displayed font size
 as the template maximum so short values do not overflow the box vertically.
+Photoshop Dynamic Text layers are detected separately. Their CSV contents are
+updated normally, but manual auto-fit is disabled because Photoshop controls
+their fitting and does not expose the regular paragraph box operations.
 
-Auto-fit supports straight, horizontal, unrotated regular paragraph text only.
-Rotated, skewed, warped, vertical, and Photoshop Dynamic Text layers are not
-supported by this JSX fitting method; convert them to a regular horizontal
-paragraph box before mapping or fitting them.
+Manual auto-fit supports straight, horizontal, unrotated regular paragraph text
+only. Rotated, skewed, warped, and vertical text are not supported by this JSX
+fitting method. Dynamic Text remains mappable and uses Photoshop's own fitting;
+convert it to a regular horizontal paragraph box only if you specifically want
+the script's manual shrink-to-fit behavior.
 
 You can also prefix a paragraph text layer with `[fit]` to enable this behavior by
 default. For example, `[fit] NAME` can still be mapped manually to `Last Name`.

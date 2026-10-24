@@ -118,6 +118,15 @@ assert.strictEqual(context.resolveEffectiveFontSize(0, 212), 212);
 assert.strictEqual(context.resolveEffectiveFontSize(NaN, 212), 212);
 assert.strictEqual(context.calculateFittedFontSize(163, 6, 3492, 2863, 0.98), 163);
 assert.strictEqual(context.calculateFittedFontSize(163, 6, 3492, 5171, 0.98), 107.8);
+assert.strictEqual(context.supportsManualTextFit(true, false), true);
+assert.strictEqual(context.supportsManualTextFit(true, true), false);
+assert.strictEqual(context.supportsManualTextFit(false, false), false);
+
+const activationDocument = { activeLayer: null };
+const activationLayer = { name: "measurement" };
+context.activateLayerForTextChange(activationDocument, activationLayer);
+assert.strictEqual(context.app.activeDocument, activationDocument);
+assert.strictEqual(activationDocument.activeLayer, activationLayer);
 
 const immediateFitRule = { enabled: false, minimumSize: 6, maximumSize: 212 };
 assert.strictEqual(context.updateTextFitRule(immediateFitRule, true, true, "6"), "");
