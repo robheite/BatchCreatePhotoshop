@@ -121,6 +121,9 @@ assert.strictEqual(context.calculateFittedFontSize(163, 6, 3492, 5171, 0.98), 10
 assert.strictEqual(context.supportsManualTextFit(true, false), true);
 assert.strictEqual(context.supportsManualTextFit(true, true), false);
 assert.strictEqual(context.supportsManualTextFit(false, false), false);
+assert.strictEqual(context.shouldBlockDynamicTextMapping(0, true), true);
+assert.strictEqual(context.shouldBlockDynamicTextMapping(-1, true), false);
+assert.strictEqual(context.shouldBlockDynamicTextMapping(0, false), false);
 
 const activationDocument = { activeLayer: null };
 const activationLayer = { name: "measurement" };
@@ -136,6 +139,18 @@ assert.match(context.updateTextFitRule(immediateFitRule, false, true, "6"), /par
 immediateFitRule.enabled = true;
 assert.strictEqual(context.updateTextFitRule(immediateFitRule, false, false, "6"), "");
 assert.strictEqual(immediateFitRule.enabled, false);
+
+assert.throws(
+  () => context.validateMappedTextLayers(
+    { textLayers: [{ path: "Name", dynamicText: true }] },
+    { textMappings: [0] }
+  ),
+  /render blank.*regular paragraph text boxes/s
+);
+assert.doesNotThrow(() => context.validateMappedTextLayers(
+  { textLayers: [{ path: "Name", dynamicText: true }] },
+  { textMappings: [-1] }
+));
 
 assert.strictEqual(
   context.makeBaseName("{Name}_{row}", ["Name"], ["DURHAM / TEST"], 1),

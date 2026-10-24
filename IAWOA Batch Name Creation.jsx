@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.5";
+var IAWOA_VERSION = "2.2.6";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -55,6 +55,13 @@ function main() {
     var visibilityRules = createAutomaticVisibilityRules(inventory.allLayers, parsed.headers);
     var options = showMappingDialog(doc, csvFile, parsed, inventory, textMappings, textFitRules, visibilityRules);
     if (!options) {
+        return;
+    }
+
+    try {
+        validateMappedTextLayers(inventory, options);
+    } catch (mappingError) {
+        alert("Nothing was exported.\n\n" + formatError(mappingError));
         return;
     }
 
@@ -245,10 +252,12 @@ function scanDocument(doc) {
                 path: path,
                 key: key,
                 name: layer.name,
-                isGroup: layer.typename === "LayerSet"
+                isGroup: layer.typename === "LayerSet",
+                dynamicText: false
             };
             result.allLayers.push(descriptor);
             if (layer.typename === "ArtLayer" && layer.kind === LayerKind.TEXT) {
+                descriptor.dynamicText = isDynamicTextLayer(layer);
                 result.textLayers.push(descriptor);
             }
             if (layer.typename === "LayerSet") {
@@ -522,7 +531,7 @@ function buildTextMappingTab(tab, parsed, inventory, textMappings, textFitRules)
     fitEditor.add("statictext", undefined, "pt");
     fitEditor.add("statictext", undefined, "Changes apply immediately.");
     tab.add("statictext", undefined,
-        "Manual auto-fit is for straight horizontal paragraph text. Dynamic Text is mapped normally and fitted by Photoshop; rotated, skewed, warped, or vertical text is unsupported.",
+        "Manual auto-fit is for straight horizontal paragraph text. Dynamic Text cannot be batch-updated by JSX; convert it to a regular paragraph text box first.",
         { multiline: true });
 
     list.onChange = function () {
@@ -579,8 +588,9 @@ function refreshTextMappingList(list, parsed, inventory, textMappings, textFitRu
     for (i = 0; i < inventory.textLayers.length; i++) {
         var item = list.add("item", inventory.textLayers[i].path);
         item.subItems[0].text = textMappings[i] >= 0 ? parsed.headers[textMappings[i]] : "<unchanged>";
-        item.subItems[1].text = textFitRules[i].enabled ?
-            "Yes (min " + formatDecimal(textFitRules[i].minimumSize) + " pt)" : "No";
+        item.subItems[1].text = inventory.textLayers[i].dynamicText ?
+            "Dynamic Text - convert" : (textFitRules[i].enabled ?
+                "Yes (min " + formatDecimal(textFitRules[i].minimumSize) + " pt)" : "No");
     }
     if (list.items.length > 0) {
         list.selection = Math.min(keep, list.items.length - 1);
@@ -777,6 +787,28 @@ function preflightBatch(parsed, options) {
     if (options.proofJPG && (!options.watermarkFile || !options.watermarkFile.exists)) {
         throw new Error("The selected proof watermark is no longer available.");
     }
+}
+
+function validateMappedTextLayers(inventory, options) {
+    var unsupported = [];
+    var i;
+    for (i = 0; i < inventory.textLayers.length; i++) {
+        if (shouldBlockDynamicTextMapping(
+                options.textMappings[i], inventory.textLayers[i].dynamicText)) {
+            unsupported.push(inventory.textLayers[i].path);
+        }
+    }
+    if (unsupported.length > 0) {
+        throw new Error(
+            "Mapped Photoshop Dynamic Text layers render blank when changed through JSX. " +
+            "Convert these layers to regular paragraph text boxes and run the batch again:\n\n" +
+            unsupported.join("\n")
+        );
+    }
+}
+
+function shouldBlockDynamicTextMapping(headerIndex, dynamicText) {
+    return headerIndex >= 0 && dynamicText;
 }
 
 function resolveWatermarkFile() {
