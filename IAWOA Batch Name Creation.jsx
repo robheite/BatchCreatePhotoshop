@@ -17,7 +17,7 @@ if (typeof app !== "undefined") {
     app.bringToFront();
 }
 
-var IAWOA_VERSION = "2.2.6";
+var IAWOA_VERSION = "2.2.7";
 var IAWOA_SETTINGS_FOLDER_NAME = "IAWOA Batch Name Creation";
 var IAWOA_SETTINGS_FILE_NAME = "settings.json";
 var IAWOA_JPG_QUALITY = 3;
@@ -998,36 +998,36 @@ function fitTextLayerToParagraphBox(layer, rule) {
     }
 
     var previousActiveLayer = doc.activeLayer;
-    var measurementLayer = layer.duplicate();
+    var paragraphMeasurementLayer = layer.duplicate();
+    var pointMeasurementLayer = null;
     var boxWidth = 0;
     var measuredWidth = 0;
     try {
-        measurementLayer.name = "IAWOA Auto-fit Measurement";
-        try { measurementLayer.allLocked = false; } catch (ignored1) {}
-        measurementLayer.visible = true;
-        activateLayerForTextChange(doc, measurementLayer);
+        paragraphMeasurementLayer.name = "IAWOA Auto-fit Box Measurement";
+        try { paragraphMeasurementLayer.allLocked = false; } catch (ignored1) {}
+        paragraphMeasurementLayer.visible = true;
+        activateLayerForTextChange(doc, paragraphMeasurementLayer);
 
         // Measure the transformed paragraph box in document pixels. A long run
         // of tiny glyphs fills the box closely without relying on TextItem.width,
         // whose units do not include document resolution or layer transforms.
-        measurementLayer.textItem.size = UnitValue(1, "pt");
-        measurementLayer.textItem.contents = repeatString("M ", 2048);
+        paragraphMeasurementLayer.textItem.size = UnitValue(1, "pt");
+        paragraphMeasurementLayer.textItem.contents = repeatString("M ", 2048);
         app.refresh();
-        boxWidth = layerBoundsWidth(measurementLayer);
+        boxWidth = layerBoundsWidth(paragraphMeasurementLayer);
+        paragraphMeasurementLayer.remove();
+        paragraphMeasurementLayer = null;
 
-        // Photoshop 27.11 can clear the internal text-layer selection during
-        // refresh. Re-select immediately before each setter that relies on it.
-        activateLayerForTextChange(doc, measurementLayer);
-        measurementLayer.textItem.contents = textItem.contents;
-        activateLayerForTextChange(doc, measurementLayer);
-        measurementLayer.textItem.kind = TextType.POINTTEXT;
-        activateLayerForTextChange(doc, measurementLayer);
-        measurementLayer.textItem.size = UnitValue(maximumSize, "pt");
+        // Photoshop 27.11 rejects converting a paragraph layer to point text.
+        // Create a fresh disposable point-text layer instead, copy the relevant
+        // typography, and measure the unwrapped value at its maximum size.
+        pointMeasurementLayer = createPointTextMeasurementLayer(doc, textItem, maximumSize);
         app.refresh();
-        measuredWidth = layerBoundsWidth(measurementLayer);
+        measuredWidth = layerBoundsWidth(pointMeasurementLayer);
     } finally {
-        try { measurementLayer.remove(); } catch (ignored2) {}
-        try { doc.activeLayer = previousActiveLayer; } catch (ignored3) {}
+        try { if (paragraphMeasurementLayer) { paragraphMeasurementLayer.remove(); } } catch (ignored2) {}
+        try { if (pointMeasurementLayer) { pointMeasurementLayer.remove(); } } catch (ignored3) {}
+        try { doc.activeLayer = previousActiveLayer; } catch (ignored4) {}
     }
 
     if (boxWidth <= 0) {
@@ -1049,6 +1049,28 @@ function fitTextLayerToParagraphBox(layer, rule) {
 function activateLayerForTextChange(doc, layer) {
     app.activeDocument = doc;
     doc.activeLayer = layer;
+}
+
+function createPointTextMeasurementLayer(doc, sourceTextItem, maximumSize) {
+    var layer = doc.artLayers.add();
+    layer.kind = LayerKind.TEXT;
+    layer.name = "IAWOA Auto-fit Text Measurement";
+    layer.visible = true;
+    activateLayerForTextChange(doc, layer);
+
+    var target = layer.textItem;
+    target.contents = sourceTextItem.contents;
+    target.font = sourceTextItem.font;
+    target.size = UnitValue(maximumSize, "pt");
+    target.horizontalScale = sourceTextItem.horizontalScale;
+    target.verticalScale = sourceTextItem.verticalScale;
+    target.tracking = sourceTextItem.tracking;
+    try { target.fauxBold = sourceTextItem.fauxBold; } catch (ignored1) {}
+    try { target.fauxItalic = sourceTextItem.fauxItalic; } catch (ignored2) {}
+    try { target.capitalization = sourceTextItem.capitalization; } catch (ignored3) {}
+    try { target.antiAliasMethod = sourceTextItem.antiAliasMethod; } catch (ignored4) {}
+    target.position = [UnitValue(10, "px"), UnitValue(100, "px")];
+    return layer;
 }
 
 function layerBoundsWidth(layer) {

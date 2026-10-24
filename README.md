@@ -55,6 +55,8 @@ Manual auto-fit supports straight, horizontal, unrotated regular paragraph text
 only. Rotated, skewed, warped, and vertical text are not supported by this JSX
 fitting method. Convert Dynamic Text to a regular horizontal paragraph box before
 mapping it because legacy JSX cannot render scripted Dynamic Text changes reliably.
+Photoshop 27.11 compatibility avoids the rejected paragraph-to-point conversion by
+measuring text with a fresh disposable point-text layer instead.
 
 You can also prefix a paragraph text layer with `[fit]` to enable this behavior by
 default. For example, `[fit] NAME` can still be mapped manually to `Last Name`.

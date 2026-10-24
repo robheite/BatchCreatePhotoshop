@@ -124,12 +124,47 @@ assert.strictEqual(context.supportsManualTextFit(false, false), false);
 assert.strictEqual(context.shouldBlockDynamicTextMapping(0, true), true);
 assert.strictEqual(context.shouldBlockDynamicTextMapping(-1, true), false);
 assert.strictEqual(context.shouldBlockDynamicTextMapping(0, false), false);
-
 const activationDocument = { activeLayer: null };
 const activationLayer = { name: "measurement" };
 context.activateLayerForTextChange(activationDocument, activationLayer);
 assert.strictEqual(context.app.activeDocument, activationDocument);
 assert.strictEqual(activationDocument.activeLayer, activationLayer);
+
+context.LayerKind = { TEXT: "text" };
+context.UnitValue = (value, type) => ({ value, type });
+const pointMeasurementText = {};
+const pointMeasurementDocument = {
+  activeLayer: null,
+  artLayers: {
+    add() {
+      return { textItem: pointMeasurementText };
+    },
+  },
+};
+const pointMeasurementLayer = context.createPointTextMeasurementLayer(
+  pointMeasurementDocument,
+  {
+    contents: "ABIGAIL",
+    font: "DMSans-Black",
+    horizontalScale: 139,
+    verticalScale: 100,
+    tracking: 0,
+    fauxBold: false,
+    fauxItalic: false,
+    capitalization: "allCaps",
+    antiAliasMethod: "sharp",
+  },
+  120
+);
+assert.strictEqual(pointMeasurementLayer.kind, "text");
+assert.strictEqual(pointMeasurementText.contents, "ABIGAIL");
+assert.strictEqual(pointMeasurementText.font, "DMSans-Black");
+assert.deepStrictEqual(pointMeasurementText.size, { value: 120, type: "pt" });
+assert.strictEqual(pointMeasurementText.horizontalScale, 139);
+assert.deepStrictEqual(Array.from(pointMeasurementText.position), [
+  { value: 10, type: "px" },
+  { value: 100, type: "px" },
+]);
 
 const immediateFitRule = { enabled: false, minimumSize: 6, maximumSize: 212 };
 assert.strictEqual(context.updateTextFitRule(immediateFitRule, true, true, "6"), "");
